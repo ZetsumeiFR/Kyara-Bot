@@ -14,7 +14,7 @@ Copie `.env.example` en `.env` :
 | `KYARA_DEVICE_ID` | requis | clé `kyara_device` du Local Storage |
 | `INTERVAL_MINUTES` | `10` | délai entre deux cycles (+ 0 à 90 s aléatoires) |
 | `RECYCLE_RARITIES` | `C,U,R,E` | raretés dont les doublons sont recyclés (vide = aucun recyclage) |
-| `PACK_ID` | `all` | booster ouvert |
+| `PACK_ID` | `waifu` | booster ouvert (`all` = Shōnen Mix) |
 | `HEADLESS` | `false` | `true` pour un Chromium sans fenêtre (Turnstile échoue plus souvent) |
 
 ## Lancer en local

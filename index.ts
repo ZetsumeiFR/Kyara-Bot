@@ -8,7 +8,7 @@ if (!token || !deviceId) {
   process.exit(1);
 }
 
-const PACK_ID = process.env.PACK_ID ?? "all";
+const PACK_ID = process.env.PACK_ID ?? "waifu";
 const INTERVAL_MS = Number(process.env.INTERVAL_MINUTES ?? 10) * 60_000;
 const JITTER_MS = 90_000;
 const RECYCLE_RARITIES = (process.env.RECYCLE_RARITIES ?? "C,U,R,E").split(",").map((r) => r.trim()).filter(Boolean);
