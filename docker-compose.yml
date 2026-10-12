@@ -1,0 +1,10 @@
+services:
+  kyara-bot:
+    build: .
+    restart: unless-stopped
+    init: true
+    env_file: .env
+    shm_size: 1gb
+    volumes:
+      - ./logs:/app/logs
+      - ./profile:/app/profile
