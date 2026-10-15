@@ -88,9 +88,10 @@ export class Kyara {
     return data?.user ?? data;
   }
 
-  private async turnstile(): Promise<string> {
-    const { turnstile: sitekey } = await this.api<{ turnstile?: string }>("/auth/providers");
-    if (!sitekey) throw new Error("pas de clé Turnstile annoncée par le serveur");
+  /** Null when the server announces no Turnstile key: like the site, no pass is needed then. */
+  private async turnstile(): Promise<string | null> {
+    const { turnstile: sitekey } = await this.api<{ turnstile?: string | null }>("/auth/providers");
+    if (!sitekey) return null;
     const token = this.page!.evaluate(
       (sitekey) =>
         new Promise<string>((resolve, reject) => {
@@ -140,9 +141,10 @@ export class Kyara {
     }
   }
 
-  private async ensurePass(force = false): Promise<string> {
+  private async ensurePass(force = false): Promise<string | undefined> {
     if (!force && this.pass && this.pass.expiresAt - Date.now() > PASS_MARGIN_MS) return this.pass.pass;
     const turnstile = await this.turnstile();
+    if (!turnstile) return undefined;
     this.pass = await this.api<{ pass: string; expiresAt: number }>("/auth/pass", { method: "POST", body: { turnstile } });
     return this.pass.pass;
   }
@@ -150,7 +152,8 @@ export class Kyara {
   /** Opens `count` boosters paid only with free packs (maxChakra 0: never spends chakra). */
   async openFree(packId: string, count: number): Promise<{ pulls: Pull[]; stopped?: { code?: string; message?: string } }> {
     const attempt = async (force: boolean) => {
-      const headers = { "x-pass": await this.ensurePass(force), "x-request-id": crypto.randomUUID().replace(/-/g, "") };
+      const pass = await this.ensurePass(force);
+      const headers = { ...(pass ? { "x-pass": pass } : {}), "x-request-id": crypto.randomUUID().replace(/-/g, "") };
       const id = encodeURIComponent(packId);
       if (count === 1) {
         const pull = await this.api<Pull>(`/packs/${id}/open`, { method: "POST", body: { maxChakra: 0 }, headers });
