@@ -25,6 +25,8 @@ export type User = {
   freePacksMax?: number;
   bonusPacks?: number;
   nextFreeAt?: string;
+  freeBoost?: { regenHours?: number };
+  membership?: { regenBoostPct?: number };
 };
 type Pull = { cards: Card[]; user: User };
 
@@ -86,6 +88,13 @@ export class Kyara {
   async me(): Promise<User> {
     const data = await this.api<any>("/me");
     return data?.user ?? data;
+  }
+
+  /** Milliseconds per free pack, computed like the site: boosted or base regen, minus the membership bonus. */
+  async regenMs(user: User): Promise<number> {
+    const config = await this.api<{ freePacks: { regenHours: number } }>("/config");
+    const hours = user.freeBoost?.regenHours ?? config.freePacks.regenHours;
+    return hours * (1 - (user.membership?.regenBoostPct ?? 0) / 100) * 3_600_000;
   }
 
   /** Null when the server announces no Turnstile key: like the site, no pass is needed then. */
