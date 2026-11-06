@@ -48,7 +48,26 @@ export class Kyara {
     await this.page.route(BLANK_URL, (route) =>
       route.fulfill({ contentType: "text/html", body: "<!doctype html><html lang=fr><head><title>Kyara</title></head><body></body></html>" }),
     );
-    await this.page.goto(BLANK_URL);
+    await this.verify();
+  }
+
+  /**
+   * kyara.games sits behind Anubis: a real page load solves its proof of work and sets the
+   * auth cookie without which every /api call gets 403 verification_required.
+   */
+  private async verify(force = false): Promise<void> {
+    const context = this.context!;
+    const hasCookie = async () => (await context.cookies(ORIGIN)).some((c) => c.name.includes("anubis-auth"));
+    if (force) await context.clearCookies({ name: /anubis/ });
+    if (!(await hasCookie())) {
+      await this.page!.goto(ORIGIN);
+      const deadline = Date.now() + 60_000;
+      while (!(await hasCookie())) {
+        if (Date.now() > deadline) throw new Error("anubis_timeout");
+        await Bun.sleep(500);
+      }
+    }
+    await this.page!.goto(BLANK_URL);
   }
 
   async close(): Promise<void> {
@@ -57,7 +76,11 @@ export class Kyara {
     this.page = undefined;
   }
 
-  private async api<T>(path: string, init: { method?: string; body?: unknown; headers?: Record<string, string> } = {}): Promise<T> {
+  private async api<T>(
+    path: string,
+    init: { method?: string; body?: unknown; headers?: Record<string, string> } = {},
+    verified = false,
+  ): Promise<T> {
     if (!this.page) throw new Error("navigateur non démarré");
     const res = await this.page.evaluate(
       async ({ path, method, body, headers, token, deviceId }) => {
@@ -79,6 +102,10 @@ export class Kyara {
     try {
       data = res.text ? JSON.parse(res.text) : null;
     } catch {}
+    if (res.status === 403 && data?.error === "verification_required" && !verified) {
+      await this.verify(true);
+      return this.api<T>(path, init, true);
+    }
     if (res.status < 200 || res.status >= 300) {
       throw new ApiError(res.status, data?.error ?? `http_${res.status}`, data?.message ?? res.text.slice(0, 200));
     }

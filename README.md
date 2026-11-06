@@ -17,7 +17,7 @@ Copie `.env.example` en `.env` :
 | `BATCH_SIZE` | `10` | taille max d'un lot ouvert d'un coup |
 | `RECYCLE_RARITIES` | `C,U,R,E` | raretés dont les doublons sont recyclés (vide = aucun recyclage) |
 | `PACK_ID` | `waifu` | booster ouvert (`all` = Shōnen Mix) |
-| `HEADLESS` | `false` | `true` pour un Chromium sans fenêtre (Turnstile échoue plus souvent) |
+| `HEADLESS` | `false` | `true` pour un Chromium sans fenêtre (déconseillé : l'anti-bot Anubis du site refuse l'accès en headless) |
 
 ## Lancer en local
 
